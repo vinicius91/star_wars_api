@@ -62,3 +62,18 @@ class UserProfile(AbstractBaseUser, PermissionsMixin):
         """Django uses this when it needs to convert the object to text."""
 
         return self.email
+
+
+class Planet(models.Model):
+    name = models.CharField(max_length=200, unique=True)
+    climate = models.CharField(max_length=200)
+    terrain = models.CharField(max_length=200)
+    movie_appearances = models.IntegerField(default=0)
+
+    class Meta:
+        ordering = (
+            'name',
+        )
+
+    def __str__(self):
+        return self.name

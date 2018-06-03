@@ -42,6 +42,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'rest_framework.authtoken',
+    'crispy_forms',
+    'django_filters',
     'star_wars_api'
 ]
 
@@ -60,7 +62,7 @@ ROOT_URLCONF = 'star_wars.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR,os.path.join(BASE_DIR, 'templates')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -151,12 +153,15 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 REST_FRAMEWORK = {
+    'DEFAULT_PAGINATION_CLASS':
+    'star_wars_api.configurations.pagination.LimitOffsetPaginationWithMaxLimit',
+    'PAGE_SIZE': 5,
     'DEFAULT_THROTTLE_CLASSES': (
             'rest_framework.throttling.AnonRateThrottle',
             'rest_framework.throttling.UserRateThrottle',
         ),
         'DEFAULT_THROTTLE_RATES': {
-            'anon': '20/hour',
+            'anon': '50/hour',
             'user': '50/hour',
         }
 }

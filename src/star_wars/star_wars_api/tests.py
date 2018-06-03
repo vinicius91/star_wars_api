@@ -1,7 +1,8 @@
 from django.test import TestCase
 from rest_framework import status
+from rest_framework.test import APIClient
 
-from star_wars_api.models import UserProfile
+from star_wars_api.models import UserProfile, Planet
 from star_wars_api.helpers.swapi import get_planet_appearances
 
 
@@ -28,9 +29,76 @@ class UserProfileTest(TestCase):
         # And that we're returning a 201 created code.
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         # Additionally, we want to return the username and email upon successful creation.
-        self.assertEqual(response.data['username'], data['username'])
+        self.assertEqual(response.data['name'], data['name'])
         self.assertEqual(response.data['email'], data['email'])
         self.assertFalse('password' in response.data)
+
+    def test_user_login(self):
+        """Verify if user can login"""
+        data = {
+            'username': 'test@example.com',
+            'password': 'testpassword'
+        }
+        response = self.client.post('/login/', data, format='json')
+        self.assertTrue('token' in response.data)
+
+
+class PlanetTest(TestCase):
+
+    def setUp(self):
+        # We want to go ahead and originally create a user.
+        self.test_user = UserProfile.objects.create_user('planet@example.com', 'planetuser', 'planetpassword')
+
+    def test_cant_crete_planet_anon(self):
+        """Ensure that the user is created properly"""
+        data = {
+            'name': 'Alderaan',
+            'climate': 'temperate',
+            'terrain': 'grasslands, mountains'
+        }
+        response = self.client.post('/planets/', data, format='json')
+        # We want to make sure we have no planet in the database..
+        self.assertEqual(Planet.objects.count(), 0)
+        # And that we're returning a 401.
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        # Checking if the message is user friendly.
+        self.assertEqual(response.data['detail'], 'Authentication credentials were not provided.')
+
+    def test_can_create_planet_logged(self):
+        """Ensure that the user is created properly"""
+        login_data = {
+            'username': 'planet@example.com',
+            'password': 'planetpassword'
+        }
+        login_response = self.client.post('/login/', login_data, format='json')
+        # Getting the logged token
+        token = 'Token ' + login_response.data['token']
+        data = {
+            'name': 'Alderaan',
+            'climate': 'temperate',
+            'terrain': 'grasslands, mountains'
+        }
+        client = APIClient()
+        # Using the planet User
+        client.credentials(HTTP_AUTHORIZATION=token)
+        response = client.post(
+            '/planets/',
+            data,
+            format='json',
+            headers={
+                'Content-Type': 'application/json'
+            }
+        )
+        # We want to make sure we have no planet in the database..
+        self.assertEqual(Planet.objects.count(), 1)
+        # And that we're returning a 401.
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        # Checking if all the parameters were returned
+        self.assertEqual(response.data['name'], data['name'])
+        self.assertEqual(response.data['climate'], data['climate'])
+        self.assertEqual(response.data['terrain'], data['terrain'])
+        self.assertTrue('movie_appearances' in response.data)
+        self.assertTrue('url' in response.data)
 
 
 class SwapiMovieAppearancesTest(TestCase):
