@@ -60,3 +60,5 @@ target/
 \.idea/
 
 venv/
+
+src/star_wars/star_wars/\.env
